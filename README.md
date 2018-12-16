@@ -1,4 +1,5 @@
-# NCEAS Hackathon 2018
+NCEAS Hackathon 2018
+====================
 
 NCEAS Internal Hackathon Dec. 2018
 
@@ -6,7 +7,7 @@ NCEAS Internal Hackathon Dec. 2018
 
 
 
-# Projects
+## Projects
 
 - Entering publications into NCEAS administrative database
 
