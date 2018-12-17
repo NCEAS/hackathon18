@@ -1,0 +1,36 @@
+---
+title: "NCEAS Hackathon Participants Expenses"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+
+
+Read in data:
+
+```{r libraries}
+library(googlesheets) # install.packages('googlesheets')
+library(tidyverse)
+
+```
+
+```{r read in data}
+## authorize googledocs -- requires user interaction with default browser
+gs_auth(new_user = TRUE) 
+
+
+#### read in Google Sheet, previously gs_title('OHI_CountriesMaster')----
+master_list <-  googlesheets::gs_url('') %>% 
+  googlesheets::gs_read()   
+head(master_list)
+```
+
+
+
+## Plots
+
