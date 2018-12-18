@@ -18,17 +18,17 @@ Read in data:
 library(googlesheets) # install.packages('googlesheets')
 library(tidyverse)
 library(skimr)
-
 ```
 
 This only works if the data is in a google drive, not team drive. What you need to do to make this work: 
 
 Copy the two data sheets into your NCEAS google drive (not team drive). Then the following will work: 
 
+ToDos: Check `googledrive` package to access files from Team Drive
+
 ```{r read in data}
 ## authorize googledocs -- requires user interaction with default browser
 gs_auth(new_user = TRUE) 
-
 
 #### read in Google Sheets ----
 gus <-  googlesheets::gs_title("nceas-participants-expenses1718_oid") %>% 
@@ -45,7 +45,7 @@ head(admin)
 ## Wrangle
 
 ### Explore GUS: 
-```{r}
+```{r fixing oid type}
 g <- gus %>%
   select(person_oid = Vendor, 
          expense = Expense, # assume expense is food
@@ -56,6 +56,11 @@ g <- gus %>%
          person_oid = as.numeric(person_oid)) %>% # turn to numeric to remove non-numeric vendors
   filter(description != "provide research services") # others to filter?
 str(g) #nrows = 1058
+```
+
+### Fixing different date formats in the `description` file
+
+```{r dates regex}
 
 ## Pattern 1: "2018 LTER Science Council Mtg, May 15-18, 2018" 
 pattern1 <-  regex("[a-zA-Z]+ [0-9]+-[0-9]+, \\d{4}")  
@@ -125,8 +130,6 @@ unique(g$description)
 # string parse the dates from the description
 # mutate(days_spent_in_SB)
 
-# description field appears to be truncated, character limit of 60
-# in GUS can type more than 60 but won't save all
 
 unique(g$person_oid)
 
@@ -140,11 +143,17 @@ unique(g$person_oid)
 
 **Notes:**
 
-Every time the vendor is a person_id and not a hotel name, we assume it's food. It could also be taxi, baggage fees. We assume that it's money paid in SB. 
- 
-It would be nice if there were a way to identify it more in GUS. 
+- Every time the vendor is a person_id and not a hotel name, we assume it's food. It could also be taxi, baggage fees. We assume that it's money paid in SB.  It would be nice if there were a way to identify it more in GUS. 
 
-Could also make the assumption that they spend $55 per day max. Then that way you could assume that was food (so could subtract from the total (`mutate(days_spent_in_SB)`). We don't know how much they spend over the 55/day.
+- Could also make the assumption that they spend $55 per day max. Then that way you could assume that was food (so could subtract from the total (`mutate(days_spent_in_SB)`). We don't know how much they spend over the 55/day.
+
+- GUS truncate the `Description` field at 60 characters. Could we use the `Notes` field? 
+
+- Standardizing date format
+
+- filter out `Description` without numeric values; will allow to check that `PAR` for none participant
+
+
  
 ### Explore Admin
 
