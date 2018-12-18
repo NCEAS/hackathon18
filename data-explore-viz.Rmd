@@ -17,22 +17,135 @@ Read in data:
 ```{r libraries}
 library(googlesheets) # install.packages('googlesheets')
 library(tidyverse)
+library(skimr)
 
 ```
 
-This only works if the data is in a google drive, not team drive. We'll do that next.
+This only works if the data is in a google drive, not team drive. What you need to do to make this work: 
+
+Copy the two data sheets into your NCEAS google drive (not team drive). Then the following will work: 
 
 ```{r read in data}
 ## authorize googledocs -- requires user interaction with default browser
 gs_auth(new_user = TRUE) 
 
+
 #### read in Google Sheets ----
-master_list <-  googlesheets::gs_url("https://docs.google.com/spreadsheets/d/1FZJUZLIvcEfg3Wx4MO4ilCs5zi1A08qui4cJyPs1nbk/edit#gid=0") %>% 
+gus <-  googlesheets::gs_title("nceas-participants-expenses1718_oid") %>% 
   googlesheets::gs_read()   
-head(master_list)
+head(gus)
+
+admin <-  googlesheets::gs_title("nceas-participants_oid") %>%
+  googlesheets::gs_read()   
+head(admin)
+
 ```
 
 
+## Wrangle
+
+### Explore GUS: 
+```{r}
+g <- gus %>%
+  select(person_oid = Vendor, 
+         expense = Expense, # assume expense is food
+         project_code = `Project Code`, 
+         type = Type, 
+         description = Description) %>%
+  mutate(vendor = person_oid,
+         person_oid = as.numeric(person_oid))
+
+# d <- str_split(g$description, ",")
+# d2 <- lapply(d, function(x) d[[x]][(length(d[[x]]) - 1):length(d[[x]])])
+
+#/w[3+] /d[1+]-/d[1+], /d[4]$
+
+# Try making this regex("\\w[3+] \\d[1+]-\\d[1+], \\d[4]$")
+our_pattern <-  regex("[a-zA-Z]+ [0-9]+-[0-9]+, \\d{4}")  
+str_match(g$description[1:5], our_pattern)
+str_view(g$description[1:15], our_pattern)
+                        
+      
+
+d2 <- separate(g, description, sep = ",", into = c("a", "b", "c", "d", "e"))
+
+g2 <- g %>%
+  mutate(d = str_split(description, ","))
+
+
+## TODO (see notes below)
+# string parse the dates from the description
+# mutate(days_spent_in_SB)
+
+# description field appears to be truncated, character limit of 60
+
+unique(g$person_oid)
+
+
+
+# filter out 7S
+# fitler out
+
+```
+
+
+**Notes:**
+
+Every time the vendor is a person_id and not a hotel name, we assume it's food. It could also be taxi, baggage fees. We assume that it's money paid in SB. 
+ 
+It would be nice if there were a way to identify it more in GUS. 
+
+Could also make the assumption that they spend $55 per day max. Then that way you could assume that was food (so could subtract from the total (`mutate(days_spent_in_SB)`). We don't know how much they spend over the 55/day.
+ 
+### Explore Admin
+
+```{r}
+
+a <- admin %>%
+  select(project_oid, lead_last, lead_first, start_date, end_date, activity_oid, person_oid, actv_type, is_onsite) %>%
+  filter(actv_type %in% c("Working Group",
+                          "Training Workshop",
+                          "Workshop",
+                          "Meeting",
+                          "Advisory Board"))
+
+
+   unique(a$actv_type)
+
+
+# explore Other         
+#a %>% filter(actv_type == "Other") %>% data.frame        
+
+## TODO
+# filter out the ones where is_onsite == FALSE
+
+```
+ 
+Fun fact: actv_type "Other" on 2/6 is the murder mystery party.
+ 
+ 
+### Join
+```{r}
+admin_gus_full <- full_join(a, g, 
+                  by = "person_oid")
+
+admin_gus_onsite <- admin_gus_full %>%
+  filter(is_onsite == TRUE) 
+
+
+unique(admin_gus$type)
+
+```
+
+This person was in 2 activities, but none on-site. 
+
+  project_oid lead_last lead_first start_date end_date activity_oid person_oid actv_type expense project_code type  descripti… vendor
+1          NA NA        NA         NA         NA                 NA      51429 NA          1987. SASP4        PAR   Jones, M.… 51429 
+
+Michael Jones: he was an offsite particpant 
+
+We want
+working_group, meeting, date, person, expenses
 
 ## Plots
 
