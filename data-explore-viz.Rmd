@@ -53,31 +53,80 @@ g <- gus %>%
          type = Type, 
          description = Description) %>%
   mutate(vendor = person_oid,
-         person_oid = as.numeric(person_oid))
+         person_oid = as.numeric(person_oid)) %>% # turn to numeric to remove non-numeric vendors
+  filter(description != "provide research services") # others to filter?
+str(g) #nrows = 1058
 
-# d <- str_split(g$description, ",")
-# d2 <- lapply(d, function(x) d[[x]][(length(d[[x]]) - 1):length(d[[x]])])
-
-#/w[3+] /d[1+]-/d[1+], /d[4]$
-
-# Try making this regex("\\w[3+] \\d[1+]-\\d[1+], \\d[4]$")
-our_pattern <-  regex("[a-zA-Z]+ [0-9]+-[0-9]+, \\d{4}")  
-str_match(g$description[1:5], our_pattern)
-str_view(g$description[1:15], our_pattern)
+## Pattern 1: "2018 LTER Science Council Mtg, May 15-18, 2018" 
+pattern1 <-  regex("[a-zA-Z]+ [0-9]+-[0-9]+, \\d{4}")  
+str_match(g$description[1:5], pattern1)
+str_view(g$description[1:15], pattern1)
                         
-      
+g <- g %>%
+  mutate(date_extract = str_extract(description, pattern1)) %>%
+  filter(is.na(date_extract))
+str(g) #nrows = 730
 
-d2 <- separate(g, description, sep = ",", into = c("a", "b", "c", "d", "e"))
+## Pattern 2: "Amos, J.; SNAPP: Horizon Scanning Meeting, 7/15-19/18" or "LTER, Sokol: Mettacommunities, 5/14-17/18 and LTER, Hallett:"
+pattern2 <- regex("[0-9]+/[0-9]+-[0-9]+/[0-9]+") 
+str_match(g$description, pattern2)
+str_view(g$description, pattern2)
 
-g2 <- g %>%
-  mutate(d = str_split(description, ","))
+g <- g %>%
+  mutate(date_extract = str_extract(description, pattern2)) %>%
+  filter(is.na(date_extract))
+str(g) #nrow 624
 
+## Pattern 3: "AF Palkovacs WG: 7/24-30,2017"
+pattern3 <- regex("[0-9]+/[0-9]+-[0-9]+,\\d{4}") 
+str_match(g$description, pattern3)
+str_view(g$description, pattern3)
+
+g <- g %>%
+  mutate(date_extract = str_extract(description, pattern3)) %>%
+  filter(is.na(date_extract))
+str(g) #nrow 449
+
+
+## Pattern 4: "Hyman WG: 08/01-2,17"
+pattern4 <- regex("[0-9]+/[0-9]+-[0-9]+,\\d{2}") 
+str_match(g$description, pattern4)
+str_view(g$description, pattern4)
+
+g <- g %>%
+  mutate(date_extract = str_extract(description, pattern4)) %>%
+  filter(is.na(date_extract))
+str(g) #nrow 424
+
+## Pattern 5: "CC: Gillquist Persona 7/11/2017"
+pattern5 <- regex("[0-9]+/[0-9]+/\\d{4}") 
+str_match(g$description, pattern5)
+str_view(g$description, pattern5)
+
+g <- g %>%
+  mutate(date_extract = str_extract(description, pattern5)) %>%
+  filter(is.na(date_extract))
+str(g) #nrow 413
+
+## Pattern 6: "AF SNAPP SAC and Mgmt: 7/18/17"
+pattern6 <- regex("[0-9]+/[0-9]+/\\d{2}") 
+str_match(g$description, pattern6)
+str_view(g$description, pattern6)
+
+g <- g %>%
+  mutate(date_extract = str_extract(description, pattern6)) %>%
+  filter(is.na(date_extract))
+str(g) #nrow 396
+
+
+unique(g$description)
 
 ## TODO (see notes below)
 # string parse the dates from the description
 # mutate(days_spent_in_SB)
 
 # description field appears to be truncated, character limit of 60
+# in GUS can type more than 60 but won't save all
 
 unique(g$person_oid)
 
