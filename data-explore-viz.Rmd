@@ -34,3 +34,16 @@ head(master_list)
 
 ## Plots
 
+How much money was spent on local restaurants over the past year by working group?
+
+
+
+
+
+### Map
+
+Where are visitors coming from?
+
+
+
+
